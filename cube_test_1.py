@@ -44,9 +44,15 @@ CUBE_ROTATIONS = {
 
 # this dictionary will define how the faces and strips are rotated when the front face is rotated in a certain direction
 FACE_ROTATIONS = {
-    1: {
+    # direction: (face, turn, cycle)
+    # face: the index of the face to rotate (0 to 5)
+    # turn: the direction to rotate the face (-1 = clockwise, 1 = counterclockwise)
+    # cycle: a list of tuples defining the strips to rotate (face, kind, index, reverse)
+
+    # clockwise
+    2: {
         "face": 2,    # the face to rotate (front face)
-        "turn": 1,    # the direction to rotate the face (1 = clockwise, -1 = counterclockwise)
+        "turn": -1,    # the direction to rotate the face (-1 = clockwise, 1 = counterclockwise)
         # the cycle of strips to rotate (face, kind, index, reverse)
         "cycle": [    
             (0, "row", 2, False),
@@ -55,9 +61,10 @@ FACE_ROTATIONS = {
             (3, "col", 0, True),
         ],
     },
-    2: {
+    # counterclockwise
+    1: {
         "face": 2,
-        "turn": -1,
+        "turn": 1,
         "cycle": [
             (0, "row", 2, False),
             (3, "col", 0, False),
