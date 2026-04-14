@@ -6,16 +6,13 @@ import numpy as np
 
 
 def create_cube():
-    """
-    This function creates a cube represented as a 3D array of shape (6, 3, 3).
-    Each face of the cube is initialized with a unique integer representing its colour.
-    returns:
-        cube: a 3D array representing the cube
-    """
-    # initialize the cube with unique integers for each face (0 to 5)
     cube = np.zeros((6, 3, 3), dtype=int)
+    counter = 0
     for i in range(6):
-        cube[i] = i
+        for r in range(3):
+            for c in range(3):
+                cube[i][r][c] = counter
+                counter += 1
     return cube
 
 
@@ -160,7 +157,7 @@ def apply_face_rotation(cube, move):
         set_strip(cube, face, kind, index, values, reverse)
 
 
-def rotate_whole_cube(cube):
+def rotate_whole_cube(cube, direction):
     """
     This function rotates the whole cube based on user input.
     args:
@@ -168,12 +165,6 @@ def rotate_whole_cube(cube):
     returns:
         None
     """
-    # get the direction to rotate the whole cube from the user input
-    direction = int(
-        input(
-            "Enter the direction to rotate the whole cube (8 = up, 2 = down, 4 = left, 6 = right, 0 = skips): "
-        )
-    )
 
     # if the user enters 0, we will skip the rotation and return
     if direction == 0:
@@ -190,7 +181,7 @@ def rotate_whole_cube(cube):
     apply_cube_rotation(cube, face_map, rotation_map)
 
 
-def rotate_face(cube):
+def rotate_face(cube, move):
     """
     This function rotates the front face of the cube based on user input.
     args:
@@ -199,11 +190,7 @@ def rotate_face(cube):
         None
     """
     # get the direction to rotate the front face from the user input
-    move = int(
-        input(
-            "Enter the direction to rotate the front face (1 = clockwise, 2 = counterclockwise, 0 = skip): "
-        )
-    )
+
 
     # if the user enters 0, we will skip the rotation and return
     if move == 0:
@@ -247,8 +234,8 @@ def display_cube(cube):
         print(" " * 6, end="")
         print(" ".join(str(cube[0][i][j]) for j in range(3)))
     for i in range(3):
-        print(" ".join(str(cube[1][i][j]) for j in range(3)), end=" ")
-        print(" ".join(str(cube[2][i][j]) for j in range(3)), end=" ")
+        print(" ".join(str(cube[1][i][j]) for j in range(3)), end="   ")
+        print(" ".join(str(cube[2][i][j]) for j in range(3)), end="   ")
         print(" ".join(str(cube[3][i][j]) for j in range(3)))
     for i in range(3):
         print(" " * 6, end="")
@@ -273,7 +260,7 @@ def letter_display(cube):
     #        G G G
     #        G G G
     #        G G G
-    letter_map = {0: "W", 1: "R", 2: "B", 3: "O", 4: "G", 5: "Y"}
+    letter_map = {0: "W", 1: "R", 2: "B", 3: "O", 4: "G", 5: "Y"}   
     for i in range(3):
         print(" " * 6, end="")
         print(" ".join(letter_map[cube[0][i][j]] for j in range(3)))
@@ -311,17 +298,20 @@ def colour_display(cube):
     }
     for i in range(3):
         print(" " * 6, end="")
-        print(" ".join(colour_map[cube[0][i][j]] for j in range(3)))
+        print(" ".join(colour_map[cube[0][i][j] // 9] for j in range(3)))
+
     for i in range(3):
-        print(" ".join(colour_map[cube[1][i][j]] for j in range(3)), end=" ")
-        print(" ".join(colour_map[cube[2][i][j]] for j in range(3)), end=" ")
-        print(" ".join(colour_map[cube[3][i][j]] for j in range(3)))
+        print(" ".join(colour_map[cube[1][i][j] // 9] for j in range(3)), end=" ")
+        print(" ".join(colour_map[cube[2][i][j] // 9] for j in range(3)), end=" ")
+        print(" ".join(colour_map[cube[3][i][j] // 9] for j in range(3)))
+
     for i in range(3):
         print(" " * 6, end="")
-        print(" ".join(colour_map[cube[5][i][j]] for j in range(3)))
+        print(" ".join(colour_map[cube[5][i][j] // 9] for j in range(3)))
+
     for i in range(3):
         print(" " * 6, end="")
-        print(" ".join(colour_map[cube[4][i][j]] for j in range(3)))
+        print(" ".join(colour_map[cube[4][i][j] // 9] for j in range(3)))
 
 
 def game_loop():
@@ -333,22 +323,47 @@ def game_loop():
     returns:
         None
     """
-    cube = create_cube()
-    colour_display(cube)
-    move_count = 0
-    while True:
-        # display_cube(cube)
-        # letter_display(cube)
-
-        rotate_whole_cube(cube)
+    moves = []
+    try:
+        cube = create_cube()
         colour_display(cube)
+        move_count = 0
+        while True:
+            # display_cube(cube)
+            # letter_display(cube)
 
-        rotate_face(cube)
-        colour_display(cube)
-        move_count += 1
-        if move_count >= 20:
-            print("You have made 20 moves... Debug Stop")
-            break
+            # get the direction to rotate the whole cube from the user input
+            direction = int(
+                input(
+                    "Enter the direction to rotate the whole cube (8 = up, 2 = down, 4 = left, 6 = right, 0 = skips): "
+                )
+            )
+            rotate_whole_cube(cube, direction)
+            display_cube(cube)
+            colour_display(cube)
+            moves.append(direction)
+
+            move = int(
+                input(
+                    "Enter the direction to rotate the front face (1 = clockwise, 2 = counterclockwise, 0 = skip): "
+                )
+            )
+            rotate_face(cube, move)
+            display_cube(cube)
+            colour_display(cube)
+            moves.append(move)
+
+
+            move_count += 1
+            if move_count >= 20:
+                print("You have made 20 moves... Debug Stop")
+                break
+
+    except Exception as e: 
+        with open("moves.txt", "w") as f:
+            for m in moves:
+                f.write(m)
+        print(e)
 
 
 if __name__ == "__main__":
