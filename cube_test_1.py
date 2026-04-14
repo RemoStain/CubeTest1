@@ -1,6 +1,5 @@
 import numpy as np
 import sys
-import os
 # this test will treat the cube as a flat plain with 6 faces, each face is a 2D array of size 3x3
 # the colours are represented as integers, for example: 0 = white, 1 = red, 2 = blue, 3 = orange, 4 = green, 5 = yellow
 # define the cube as a 3D array of shape (6, 3, 3)
@@ -37,13 +36,13 @@ def create_cube():
 
 
 
-
+# 0 = white, 1 = red, 2 = blue, 3 = orange, 4 = green, 5 = yellow
 # this dictionary will define how the faces and strips are rotated when the whole cube is rotated in a certain direction
 CUBE_ROTATIONS = {
     # direction: (face_map, rotation_map)
     8: (
         {0: 2, 1: 1, 2: 5, 3: 3, 4: 0, 5: 4},   # face_map: new_face_index -> old_face_index
-        {1: 1, 3: -1, 4: 2},   # rotation_map: new_face_index -> number of 90-degree rotations to apply to that face (1 = clockwise, -1 = counterclockwise, 2 = 180 degrees
+        {1: 1, 3: -1, 4: 2},   # rotation_map: new_face_index -> number of 90-degree rotations to apply to that face (1 = clockwise, -1 = counterclockwise, 2 = 180 degrees)
     ),
     2: (
         {0: 4, 1: 1, 2: 0, 3: 3, 4: 5, 5: 2},
@@ -306,32 +305,40 @@ def colour_display(cube):
         None
     """
 
+    def remove_last_char(s):
+        if not isinstance(s, str):
+            raise TypeError("Input must be a string")
+        if len(s) == 0:
+            return s
+        return s[:-1]
+
+
     # this function will display the cube in a readable format with colours
     # we will use ANSI escape codes to print the colours in the terminal
     colour_map = {
-        0: "\033[97mW\033[0m",
-        1: "\033[91mR\033[0m",
-        2: "\033[94mB\033[0m",
-        3: "\033[93mO\033[0m",
-        4: "\033[92mG\033[0m",
-        5: "\033[93mY\033[0m",
+        "W": "\033[97mW\033[0m",
+        "R": "\033[91mR\033[0m",
+        "B": "\033[94mB\033[0m",
+        "O": "\033[93mO\033[0m",
+        "G": "\033[92mG\033[0m",
+        "Y": "\033[93mY\033[0m",
     }
     for i in range(3):
         print(" " * 6, end="")
-        print(" ".join(colour_map[cube[0][i][j] // 9] for j in range(3)))
+        print(" ".join(colour_map[remove_last_char(cube[0][i][j])] for j in range(3)))
 
     for i in range(3):
-        print(" ".join(colour_map[cube[1][i][j] // 9] for j in range(3)), end=" ")
-        print(" ".join(colour_map[cube[2][i][j] // 9] for j in range(3)), end=" ")
-        print(" ".join(colour_map[cube[3][i][j] // 9] for j in range(3)))
-
-    for i in range(3):
-        print(" " * 6, end="")
-        print(" ".join(colour_map[cube[5][i][j] // 9] for j in range(3)))
+        print(" ".join(colour_map[remove_last_char(cube[1][i][j])] for j in range(3)), end=" ")
+        print(" ".join(colour_map[remove_last_char(cube[2][i][j])] for j in range(3)), end=" ")
+        print(" ".join(colour_map[remove_last_char(cube[3][i][j])] for j in range(3)))
 
     for i in range(3):
         print(" " * 6, end="")
-        print(" ".join(colour_map[cube[4][i][j] // 9] for j in range(3)))
+        print(" ".join(colour_map[remove_last_char(cube[5][i][j])] for j in range(3)))
+
+    for i in range(3):
+        print(" " * 6, end="")
+        print(" ".join(colour_map[remove_last_char(cube[4][i][j])] for j in range(3)))
 
 
 def game_loop():
@@ -376,8 +383,8 @@ def game_loop():
 
 
             move_count += 1
-            if move_count >= 6:
-                print("You have made 6 moves... Debug Stop")
+            if move_count >= 10:
+                print("You have made 10 moves... Debug Stop")
                 break
 
     except Exception as e: 
