@@ -1,17 +1,37 @@
 import numpy as np
-
+import sys
+import os
 # this test will treat the cube as a flat plain with 6 faces, each face is a 2D array of size 3x3
 # the colours are represented as integers, for example: 0 = white, 1 = red, 2 = blue, 3 = orange, 4 = green, 5 = yellow
 # define the cube as a 3D array of shape (6, 3, 3)
 
+num_to_colour_in = {
+    0: "W",
+    1: "R",
+    2: "B",
+    3: "O",
+    4: "G",
+    5: "Y"
+    }
 
 def create_cube():
-    cube = np.zeros((6, 3, 3), dtype=int)
-    counter = 0
+    shape = (6, 3, 3)
+    cube = np.empty(shape=shape, dtype="<U10")
+    
+
+
+
+    # sides
     for i in range(6):
+        counter = 1
+        char = num_to_colour_in.get(i)
+        # rows
         for r in range(3):
+
+            # columns
             for c in range(3):
-                cube[i][r][c] = counter
+                sticker = f"{char}{counter}"
+                cube[i][r][c] = sticker
                 counter += 1
     return cube
 
@@ -326,6 +346,7 @@ def game_loop():
     moves = []
     try:
         cube = create_cube()
+        display_cube(cube)
         colour_display(cube)
         move_count = 0
         while True:
@@ -355,15 +376,18 @@ def game_loop():
 
 
             move_count += 1
-            if move_count >= 20:
-                print("You have made 20 moves... Debug Stop")
+            if move_count >= 6:
+                print("You have made 6 moves... Debug Stop")
                 break
 
     except Exception as e: 
         with open("moves.txt", "w") as f:
             for m in moves:
                 f.write(m)
-        print(e)
+
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+
+        print(exc_type, exc_obj, exc_tb)
 
 
 if __name__ == "__main__":
