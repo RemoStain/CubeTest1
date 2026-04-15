@@ -4,6 +4,8 @@ import sys
 # the colours are represented as integers, for example: 0 = white, 1 = red, 2 = blue, 3 = orange, 4 = green, 5 = yellow
 # define the cube as a 3D array of shape (6, 3, 3)
 
+
+# ---- Face ID mappings ----
 num_to_colour_in = {
     0: "W",
     1: "R",
@@ -13,48 +15,44 @@ num_to_colour_in = {
     5: "Y"
     }
 
-def create_cube():
-    shape = (6, 3, 3)
-    cube = np.empty(shape=shape, dtype="<U10")
-    
 
-
-
-    # sides
-    for i in range(6):
-        counter = 1
-        char = num_to_colour_in.get(i)
-        # rows
-        for r in range(3):
-
-            # columns
-            for c in range(3):
-                sticker = f"{char}{counter}"
-                cube[i][r][c] = sticker
-                counter += 1
-    return cube
-
-
-
+# ---- Rotation Behaviours ----
 # 0 = white, 1 = red, 2 = blue, 3 = orange, 4 = green, 5 = yellow
-# this dictionary will define how the faces and strips are rotated when the whole cube is rotated in a certain direction
+# This dictionary will define how the faces and strips are rotated when the whole cube is rotated in a certain direction
 CUBE_ROTATIONS = {
-    # direction: (face_map, rotation_map)
     8: (
-        {0: 2, 1: 1, 2: 5, 3: 3, 4: 0, 5: 4},   # face_map: new_face_index -> old_face_index
-        {1: 1, 3: -1, 4: 2},   # rotation_map: new_face_index -> number of 90-degree rotations to apply to that face (1 = clockwise, -1 = counterclockwise, 2 = 180 degrees)
+        {0: 2, 1: 1, 2: 5, 3: 3, 4: 0, 5: 4},    # face_map: new face index to old face index
+        {
+            1: {"rot90": 1},    # rotation_map: new face index to rotation to apply (number of 90-degree rotations)
+            3: {"rot90": -1},    # rotation_map: new face index to rotation to apply (number of 90-degree rotations)
+            4: {"flip": "ud"},    # rotation_map: new face index to rotation to apply (flip type)
+        },
     ),
     2: (
         {0: 4, 1: 1, 2: 0, 3: 3, 4: 5, 5: 2},
-        {0: 2, 1: -1, 3: 1, 4: 2},
+        {
+            0: {"flip": "ud"},
+            1: {"rot90": -1},
+            3: {"rot90": 1},
+        },
     ),
     4: (
         {0: 0, 1: 2, 2: 3, 3: 4, 4: 1, 5: 5},
-        {0: -1, 3: 2, 4: 2, 5: 1},
+        {
+            0: {"rot90": -1},
+            3: {"flip": "lr"},
+            4: {"flip": "lr"},
+            5: {"rot90": 1},
+        },
     ),
     6: (
         {0: 0, 1: 4, 2: 1, 3: 2, 4: 3, 5: 5},
-        {0: 1, 1: 2, 4: 2, 5: -1},
+        {
+            0: {"rot90": 1},
+            1: {"flip": "lr"},
+            4: {"flip": "lr"},
+            5: {"rot90": -1},
+        },
     ),
 }
 
@@ -89,6 +87,42 @@ FACE_ROTATIONS = {
         ],
     },
 }
+
+
+# ---- Predefined Sequences for Testing ----
+dir_OR = [2, 2, 2, 2]  # predefined sequence of directions to rotate the whole cube
+rot_OR = [0, 0, 0, 0]  # predefined sequence of moves to rotate the front face 
+
+
+
+
+def create_cube():
+    shape = (6, 3, 3)
+    cube = np.empty(shape=shape, dtype="<U10")
+    
+
+
+
+    # sides
+    for i in range(6):
+        counter = 1
+        char = num_to_colour_in.get(i)
+        # rows
+        for r in range(3):
+
+            # columns
+            for c in range(3):
+                
+                sticker = f"{char}{counter}"
+
+                cube[i][r][c] = sticker
+                counter += 1
+
+    return cube
+
+
+
+
 
 
 def get_strip(cube, face, kind, index, reverse):
@@ -130,7 +164,7 @@ def set_strip(cube, face, kind, index, values, reverse):
         cube[face, :, index] = values
 
 
-def apply_cube_rotation(cube, face_map, rotation_map):
+def apply_cube_rotation(cube, face_map, transform_map):
     """
     This function applies a cube rotation based on the face_map and rotation_map parameters.
     args:
@@ -140,13 +174,31 @@ def apply_cube_rotation(cube, face_map, rotation_map):
     returns:
         None
     """
-    # create a copy of the original cube to reference the original face positions and orientations
+    # create a copy of the original cube to apply the transformations on
     original = [face.copy() for face in cube]
 
-    # apply the cube rotation based on the face_map and rotation_map
+    # apply the transformations to each face based on the face_map and rotation_map
     for new_face, old_face in face_map.items():
-        rotated = np.rot90(original[old_face], rotation_map.get(new_face, 0))
-        cube[new_face] = rotated
+        # get the original face based on the old_face index from the face_map
+        face = original[old_face]
+
+        # get the transformation to apply to the face based on the new_face index from the rotation_map
+        transform = transform_map.get(new_face, {})
+
+        # apply the rotation to the face based on the number of 90-degree rotations specified in the transform
+        turns = transform.get("rot90", 0)
+        if turns:
+            face = np.rot90(face, turns)
+
+        # apply the flip to the face based on the flip type specified in the transform
+        flip = transform.get("flip")
+        if flip == "lr":
+            face = np.fliplr(face)
+        elif flip == "ud":
+            face = np.flipud(face)
+
+        # set the transformed face back to the cube based on the new_face index from the face_map
+        cube[new_face] = face
 
 
 def apply_face_rotation(cube, move):
@@ -256,6 +308,8 @@ def display_cube(cube):
         print(" ".join(str(cube[1][i][j]) for j in range(3)), end="   ")
         print(" ".join(str(cube[2][i][j]) for j in range(3)), end="   ")
         print(" ".join(str(cube[3][i][j]) for j in range(3)))
+
+    # NOTE: the order of the bottom and back faces is reversed in the display to match the standard cube notation
     for i in range(3):
         print(" " * 6, end="")
         print(" ".join(str(cube[5][i][j]) for j in range(3)))
@@ -332,6 +386,7 @@ def colour_display(cube):
         print(" ".join(colour_map[remove_last_char(cube[2][i][j])] for j in range(3)), end=" ")
         print(" ".join(colour_map[remove_last_char(cube[3][i][j])] for j in range(3)))
 
+    # NOTE: the order of the bottom and back faces is reversed in the display to match the standard cube notation
     for i in range(3):
         print(" " * 6, end="")
         print(" ".join(colour_map[remove_last_char(cube[5][i][j])] for j in range(3)))
@@ -341,7 +396,7 @@ def colour_display(cube):
         print(" ".join(colour_map[remove_last_char(cube[4][i][j])] for j in range(3)))
 
 
-def game_loop():
+def game_loop(OVERRIDE):
     """
     This function is the main game loop. It initializes the cube and allows the user to rotate faces and the whole cube.
     It also keeps track of the number of moves made by the user and stops after a certain number of moves.
@@ -350,6 +405,8 @@ def game_loop():
     returns:
         None
     """
+
+
     moves = []
     try:
         cube = create_cube()
@@ -361,21 +418,31 @@ def game_loop():
             # letter_display(cube)
 
             # get the direction to rotate the whole cube from the user input
-            direction = int(
-                input(
-                    "Enter the direction to rotate the whole cube (8 = up, 2 = down, 4 = left, 6 = right, 0 = skips): "
+            if not OVERRIDE:
+                direction = int(
+                    input(
+                        "Enter the direction to rotate the whole cube (8 = up, 2 = down, 4 = left, 6 = right, 0 = skips): "
+                    )
                 )
-            )
+            else:
+                direction = dir_OR[move_count] if move_count < len(dir_OR) else 0
+                input(f"Rotating whole cube in direction {direction}... Press Enter to continue...")
+
             rotate_whole_cube(cube, direction)
             display_cube(cube)
             colour_display(cube)
             moves.append(direction)
 
-            move = int(
-                input(
-                    "Enter the direction to rotate the front face (1 = clockwise, 2 = counterclockwise, 0 = skip): "
+            if not OVERRIDE:
+                move = int(
+                    input(
+                        "Enter the direction to rotate the front face (1 = clockwise, 2 = counterclockwise, 0 = skip): "
+                    )
                 )
-            )
+            else:
+                move = rot_OR[move_count] if move_count < len(rot_OR) else 0
+                input(f"Rotating front face in direction {move}... Press Enter to continue...")
+
             rotate_face(cube, move)
             display_cube(cube)
             colour_display(cube)
@@ -388,13 +455,17 @@ def game_loop():
                 break
 
     except Exception as e: 
-        with open("moves.txt", "w") as f:
-            for m in moves:
-                f.write(m)
+        
 
         exc_type, exc_obj, exc_tb = sys.exc_info()
 
         print(exc_type, exc_obj, exc_tb)
+
+    finally:
+        print("Moves made:", moves)
+        with open("moves.txt", "w") as f:
+            for m in moves:
+                f.write(m)
 
 
 if __name__ == "__main__":
@@ -407,5 +478,5 @@ if __name__ == "__main__":
     # print("After rotating the front face clockwise:")
     # display_cube(cube)
     # colour_display(cube)
-
-    game_loop()
+    OVERRIDE = True
+    game_loop(OVERRIDE = OVERRIDE)
